@@ -1,0 +1,3 @@
+package com.nova.assistant;
+import com.nova.service.AssistantService;
+ import jakarta.validation.Valid; import jakarta.validation.constraints.NotBlank; import org.springframework.validation.annotation.Validated; import org.springframework.web.bind.annotation.*; @RestController @RequestMapping("/api/assistant") @Validated public class AssistantController {private final AssistantService service;public AssistantController(AssistantService s){service=s;} public record ChatRequest(@NotBlank String message){} @PostMapping("/chat") public AssistantDtos.Reply chat(@Valid @RequestBody ChatRequest request){return service.ask(request.message());}}

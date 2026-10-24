@@ -1,0 +1,3 @@
+import type { Product } from "../../types";
+import { searchCatalogue } from "../../services/productService";
+export function localAssistantReply(products:Product[],query:string){const matches=searchCatalogue(products,query,4);return {mode:"catalogue" as const,products:matches,reply:matches.length?`I found ${matches.length} catalogue match${matches.length===1?"":"es"} for “${query}”. These suggestions are based on product details, category, brand, colour, and any budget mentioned.`:"I couldn't find a close match in the current catalogue. Try a product type, brand, colour, or budget such as ‘running shoes under 5000’."};}

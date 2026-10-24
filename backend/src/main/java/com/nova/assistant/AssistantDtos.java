@@ -1,0 +1,1 @@
+package com.nova.assistant; import java.util.List; import com.nova.product.Product; public final class AssistantDtos {private AssistantDtos(){} public record Ask(String message){} public record Reply(String reply,List<Product> products,String mode){} }

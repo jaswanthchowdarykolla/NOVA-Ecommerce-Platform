@@ -1,0 +1,31 @@
+# secrets and local configuration
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+# dependencies and generated artifacts
+node_modules/
+frontend/node_modules/
+backend/target/
+dist/
+frontend/dist/
+invoices/
+*.log
+.idea/
+.vscode/
+.DS_Store
+
+# Java / Spring Boot
+backend/target/
+**/target/
+*.class
+
+# Local application configuration
+application-local.properties
+application-secret.properties
+
+# Python cache (if any scripts are included)
+__pycache__/
+*.py[cod]

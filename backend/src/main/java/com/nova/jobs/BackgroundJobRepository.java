@@ -1,0 +1,1 @@
+package com.nova.jobs; import org.springframework.data.jpa.repository.JpaRepository; import java.util.List; public interface BackgroundJobRepository extends JpaRepository<BackgroundJob,Long>{List<BackgroundJob> findTop50ByOrderByCreatedAtDesc();List<BackgroundJob> findByOrderIdOrderByCreatedAtDesc(Long orderId);boolean existsByOrderIdAndJobType(Long orderId,String jobType);}

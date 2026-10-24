@@ -1,0 +1,2 @@
+package com.nova.jobs;
+import org.springframework.security.access.prepost.PreAuthorize;import org.springframework.web.bind.annotation.*;import java.util.List;@RestController @RequestMapping("/api/jobs") public class BackgroundJobController {private final BackgroundJobRepository jobs;public BackgroundJobController(BackgroundJobRepository jobs){this.jobs=jobs;}@GetMapping @PreAuthorize("hasRole('ADMIN')") public List<BackgroundJob> list(){return jobs.findTop50ByOrderByCreatedAtDesc();}}
