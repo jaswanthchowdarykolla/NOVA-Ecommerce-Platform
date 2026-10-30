@@ -77,15 +77,43 @@ public class BackgroundJobProcessor {
         if (mailUser.isBlank()) {
             throw new IllegalStateException("Mail credentials are not configured; notification was not sent");
         }
+        String sender = mailFrom.isBlank() ? mailUser : mailFrom;
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(mailFrom.isBlank() ? mailUser : mailFrom);
+        message.setFrom(sender);
         message.setTo(to);
         message.setSubject("NOVA order confirmation #" + order.getId());
         message.setText("Hello " + order.getUser().getName() + ",\n\n"
                 + "Your order #" + order.getId() + " has been paid successfully.\n"
-                + "Total: INR " + order.getTotalAmount() + "\n\n"
+                + "Total: INR " + order.getTotalAmount() + "\n"
+                + "Delivery Address: " + order.getDeliveryAddress() + "\n"
+                + "Phone: " + order.getRecipientPhone() + "\n\n"
                 + "Thank you for shopping with NOVA.");
-        mail.send(message);
+        try {
+            mail.send(message);
+        } catch (Exception e) {
+            log.error("Failed to send customer order confirmation email to {}", to, e);
+        }
+
+        // Also notify store admin if email is different
+        if (!mailUser.equalsIgnoreCase(to)) {
+            try {
+                SimpleMailMessage adminMsg = new SimpleMailMessage();
+                adminMsg.setFrom(sender);
+                adminMsg.setTo(mailUser);
+                adminMsg.setSubject("Store Alert: New Order #" + order.getId() + " - INR " + order.getTotalAmount());
+                adminMsg.setText("Hello Store Owner,\n\n"
+                        + "A new order has been paid on your website!\n\n"
+                        + "Order ID: #" + order.getId() + "\n"
+                        + "Customer: " + order.getRecipientName() + " (" + to + ")\n"
+                        + "Amount: INR " + order.getTotalAmount() + "\n"
+                        + "Delivery Address: " + order.getDeliveryAddress() + "\n"
+                        + "Phone: " + order.getRecipientPhone() + "\n\n"
+                        + "View order details in the NOVA Admin Dashboard.");
+                mail.send(adminMsg);
+            } catch (Exception e) {
+                log.warn("Failed to send admin notification for order {}: {}", order.getId(), e.getMessage());
+            }
+        }
     }
 
     private void generateInvoice(OrderRecord order) throws Exception {

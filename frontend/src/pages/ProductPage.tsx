@@ -16,7 +16,7 @@ import { money } from '../utils/format';
 import ProductCard from '../components/ProductCard';
 import { categoryToSlug } from './pageShared';
 import { productService } from '../services/productService';
-import { isSizeAvailable, productRequiresSize, sizeChartFor } from '../utils/productSize';
+import { isFootwearProduct, isSizeAvailable, productRequiresSize, sizeChartFor } from '../utils/productSize';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1500&q=80';
 
@@ -152,7 +152,7 @@ export function ProductPage({
           {productRequiresSize(p) && (
             <div className="size-selector">
               <div className="size-selector-head">
-                <span>SIZE {p.category === 'Footwear' ? '(UK)' : ''}</span>
+                <span>SIZE {isFootwearProduct(p) ? '(UK)' : ''}</span>
                 {selectedSize ? <b>{selectedSize}</b> : <b>Select a size</b>}
               </div>
               <div className="size-options" role="listbox" aria-label="Available sizes">
@@ -172,7 +172,7 @@ export function ProductPage({
                         setAdded(false);
                       }}
                     >
-                      {p.category === 'Footwear' ? size.replace('UK ', '') : size}
+                      {isFootwearProduct(p) ? size.replace('UK ', '') : size}
                     </button>
                   );
                 })}
@@ -259,7 +259,7 @@ export function ProductPage({
               <p>
                 Brand: <strong>{p.brand}</strong> · Category: <strong>{p.category}</strong> · Colour:{' '}
                 <strong>{p.color || 'Signature'}</strong>
-                {productRequiresSize(p) ? <> · Sizes: <strong>{(p.availableSizes || []).join(', ')}</strong></> : null}
+                {productRequiresSize(p) ? <> · Sizes: <strong>{sizeChartFor(p).join(', ')}</strong></> : null}
                 {' '}· Product reference: <strong>NV-{p.id}</strong>.
               </p>
             )}

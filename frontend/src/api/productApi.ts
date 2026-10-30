@@ -9,9 +9,15 @@ export type ProductWrite = {
 };
 function normalize(p: any): Product {
   const tags = Array.isArray(p.tags) ? p.tags : String(p.tags || "").split(",").filter(Boolean);
-  const availableSizes = Array.isArray(p.availableSizes)
-    ? p.availableSizes
-    : String(p.availableSizes || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+  const rawSizes = p.availableSizes || p.available_sizes;
+  let availableSizes = Array.isArray(rawSizes)
+    ? rawSizes.map((s: any) => String(s).trim()).filter(Boolean)
+    : String(rawSizes || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+  const cat = String(p.category || "").toLowerCase();
+  const name = String(p.name || "").toLowerCase();
+  if (availableSizes.length === 0 && (cat === "footwear" || cat === "shoes" || name.includes("shoe") || name.includes("sneaker") || name.includes("boot") || name.includes("runner"))) {
+    availableSizes = ["UK 5", "UK 6", "UK 7", "UK 8", "UK 9", "UK 10", "UK 11", "UK 12"];
+  }
   return { ...p, id: Number(p.id), tags, availableSizes } as Product;
 }
 export async function getProducts(): Promise<Product[]> {

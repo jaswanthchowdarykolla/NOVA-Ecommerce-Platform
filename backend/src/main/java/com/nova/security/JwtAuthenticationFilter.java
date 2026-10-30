@@ -1,5 +1,6 @@
 package com.nova.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,7 @@ import java.util.Map;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwt;
     private final CustomUserDetailsService users;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     public JwtAuthenticationFilter(JwtService jwt, CustomUserDetailsService users) {
         this.jwt = jwt;
@@ -49,12 +51,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     } else {
-                        reject(req, res, "Invalid or expired JWT");
+                        reject(req, res, "Invalid or expired JWT. Please sign in again.");
                         return;
                     }
                 }
             } catch (Exception ex) {
-                reject(req, res, "Invalid or expired JWT");
+                reject(req, res, "Invalid or expired JWT. Please sign in again.");
                 return;
             }
         }
@@ -67,12 +69,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         res.setCharacterEncoding(StandardCharsets.UTF_8.name());
         res.setContentType(MediaType.APPLICATION_JSON_VALUE);
         res.setHeader("Cache-Control", "no-store");
-        res.getWriter().write(Map.of(
+        res.getWriter().write(mapper.writeValueAsString(Map.of(
                 "status", 401,
                 "error", "Unauthorized",
                 "message", message,
                 "path", req.getRequestURI()
-        ).toString());
+        )));
     }
 }
-

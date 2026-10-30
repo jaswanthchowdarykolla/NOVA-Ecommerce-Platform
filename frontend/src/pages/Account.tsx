@@ -28,7 +28,7 @@ import {
   type Address,
   type AddressInput
 } from '../api/addressApi';
-import { getMyPayments, type PaymentSummary } from '../api/paymentApi';
+import { createPaymentOrder, getMyPayments, verifyPayment, type PaymentSummary } from '../api/paymentApi';
 import type { OrderSummary } from '../api/orderApi';
 
 interface AccountProps {
@@ -63,6 +63,8 @@ export function Account({ user, setUser, products = [] }: AccountProps) {
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
+  const [payingOrder, setPayingOrder] = useState<number | null>(null);
+  const [paymentError, setPaymentError] = useState('');
 
   // Addresses state
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -86,6 +88,52 @@ export function Account({ user, setUser, products = [] }: AccountProps) {
   // Payments state
   const [payments, setPayments] = useState<PaymentSummary[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
+
+  const retryPayment = async (orderId: number) => {
+    setPaymentError('');
+    setPayingOrder(orderId);
+    try {
+      const paymentOrder = await createPaymentOrder(orderId);
+      if (!window.Razorpay) throw new Error('Razorpay Checkout could not be loaded. Refresh and try again.');
+      const checkout = new window.Razorpay({
+        key: paymentOrder.keyId,
+        amount: paymentOrder.amount,
+        currency: paymentOrder.currency,
+        name: 'NOVA Studio',
+        description: `Order #${orderId}`,
+        order_id: paymentOrder.razorpayOrderId,
+        handler: async (response: any) => {
+          try {
+            await verifyPayment({
+              orderId,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature
+            });
+            setOrders((current) => current.map((order) => order.id === orderId ? { ...order, status: 'PAID' } : order));
+          } catch (error) {
+            setPaymentError(error instanceof Error ? error.message : 'Payment verification failed. Refresh your orders before trying again.');
+          } finally {
+            setPayingOrder(null);
+          }
+        },
+        modal: { ondismiss: () => setPayingOrder(null) },
+        prefill: { name: user?.name, email: user?.email },
+        theme: { color: '#c9a96e' }
+      });
+      checkout.on('payment.failed', (response) => {
+        const description = response.error?.description;
+        setPaymentError(description
+          ? `Payment failed: ${description}. This order is still pending; you can retry it.`
+          : 'Razorpay could not complete this payment. This order is still pending; you can retry it.');
+        setPayingOrder(null);
+      });
+      checkout.open();
+    } catch (error) {
+      setPaymentError(error instanceof Error ? error.message : 'Unable to start Razorpay checkout.');
+      setPayingOrder(null);
+    }
+  };
 
   // Load fresh profile on mount
   useEffect(() => {
@@ -432,6 +480,7 @@ export function Account({ user, setUser, products = [] }: AccountProps) {
         {activeTab === 'orders' && (
           <section className="profile-panel">
             <span className="eyebrow">VERIFIED PURCHASE HISTORY</span>
+            {paymentError && <div className="feedback-alert error"><AlertCircle size={16} /><span>{paymentError}</span></div>}
             {ordersLoading ? (
               <p className="loading-state">Loading your order history…</p>
             ) : orders.length > 0 ? (
@@ -474,6 +523,11 @@ export function Account({ user, setUser, products = [] }: AccountProps) {
 
                       {isExpanded && (
                         <div className="order-card-details">
+                          {o.status === 'PENDING_PAYMENT' && (
+                            <button className="button button-gold" disabled={payingOrder === o.id} onClick={() => void retryPayment(o.id)}>
+                              <CreditCard size={15} /> {payingOrder === o.id ? 'Opening secure checkout…' : 'Pay now'}
+                            </button>
+                          )}
                           <div className="order-meta-info">
                             <div>
                               <span>RECIPIENT</span>

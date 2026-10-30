@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, AlertCircle } from 'lucide-react';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 
@@ -20,6 +20,7 @@ export function Auth({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const nextTarget = searchParams.get('next') || '/account';
+  const sessionExpired = searchParams.get('expired') === '1';
 
   const storeLogin = useAuthStore((state) => state.login);
 
@@ -76,6 +77,13 @@ export function Auth({
             ? 'Create an account to save your discoveries and streamline checkout.'
             : 'Sign in to continue your NOVA experience and manage orders.'}
         </p>
+
+        {sessionExpired && !register && (
+          <p className="error-message" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <AlertCircle size={15} />
+            Your session has expired. Please sign in again to continue.
+          </p>
+        )}
 
         {errorMsg && <p className="error-message">{errorMsg}</p>}
 

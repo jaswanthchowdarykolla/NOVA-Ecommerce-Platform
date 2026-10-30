@@ -131,6 +131,7 @@ export function Checkout({
           throw new Error('Razorpay Checkout script is unavailable. The order remains pending payment.');
         }
 
+        let lastPaymentFailure = '';
         const checkout = new window.Razorpay({
           key: paymentOrder.keyId,
           amount: paymentOrder.amount,
@@ -156,12 +157,18 @@ export function Checkout({
           },
           modal: {
             ondismiss: () => {
-              setError('Checkout closed. Your order is saved as pending payment.');
+              setError(lastPaymentFailure
+                ? `Payment failed: ${lastPaymentFailure}. Your order is still pending; retry it from Your Orders.`
+                : 'Checkout closed. Your order is saved as pending payment.');
               setDone(true);
             }
           },
           prefill: { name, email, contact: phone },
           theme: { color: '#c9a96e' }
+        });
+        checkout.on('payment.failed', (response) => {
+          lastPaymentFailure = response.error?.description || 'Razorpay could not complete this payment.';
+          setError(`Payment failed: ${lastPaymentFailure}. Your order remains pending while you retry.`);
         });
         checkout.open();
       } catch (e) {
@@ -189,9 +196,14 @@ export function Checkout({
             ? ' Payment was verified successfully. We are preparing your shipment.'
             : ' Payment was not completed yet. You can inspect this order under Your Orders in your account.'}
         </p>
+        {error && (
+          <div className="feedback-alert error" role="alert" style={{ maxWidth: 640, margin: '18px auto 0' }}>
+            {error}
+          </div>
+        )}
         <div className="button-row" style={{ marginTop: 24, gap: 16 }}>
           <Link className="button button-gold" to="/account/orders">
-            View order details <ArrowUpRight size={14} />
+            {paymentStatus === 'PAID' ? 'View order details' : 'Retry payment'} <ArrowUpRight size={14} />
           </Link>
           <Link className="button button-outline" to="/search?q=all">
             Continue shopping

@@ -1,5 +1,6 @@
 package com.nova.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
@@ -13,6 +14,8 @@ import java.util.Map;
 
 @Component
 public class ApiAccessDeniedHandler implements AccessDeniedHandler {
+    private final ObjectMapper mapper = new ObjectMapper();
+
     @Override
     public void handle(HttpServletRequest request,
                        HttpServletResponse response,
@@ -21,11 +24,11 @@ public class ApiAccessDeniedHandler implements AccessDeniedHandler {
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setHeader("Cache-Control", "no-store");
-        response.getWriter().write(Map.of(
+        response.getWriter().write(mapper.writeValueAsString(Map.of(
                 "status", HttpServletResponse.SC_FORBIDDEN,
                 "error", "Forbidden",
                 "message", accessDeniedException.getMessage() == null ? "Access denied" : accessDeniedException.getMessage(),
                 "path", request.getRequestURI()
-        ).toString());
+        )));
     }
 }
